@@ -142,9 +142,9 @@
     <ClCompile Include="OpenGLWrapper\vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="OpenGLWrapper\VertexArray.cpp" />
     <ClCompile Include="OpenGLWrapper\VertexBuffer.cpp" />
+    <ClCompile Include="RayTracer\RayTracer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="OpenGLWrapper\AlignedVector.h" />
     <ClInclude Include="OpenGLWrapper\Common.h" />
     <ClInclude Include="OpenGLWrapper\DebugLine.h" />
     <ClInclude Include="OpenGLWrapper\FrameBuffer.h" />
@@ -159,6 +159,7 @@
     <ClInclude Include="OpenGLWrapper\VertexArray.h" />
     <ClInclude Include="OpenGLWrapper\VertexBuffer.h" />
     <ClInclude Include="OpenGLWrapper\VertexBufferLayout.h" />
+    <ClInclude Include="RayTracer\RayTracer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
