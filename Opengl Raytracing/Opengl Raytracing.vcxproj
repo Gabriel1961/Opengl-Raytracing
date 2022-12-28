@@ -164,6 +164,9 @@
   <ItemGroup>
     <Image Include="brick_wall.jpg" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="RayTracer\raytrace.comp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
