@@ -9,7 +9,8 @@ private:
 public:
 	GLFWwindow* window;
 	RayTracer(GLFWwindow* window);
-	Quad* renderTex;
+	Quad* renderQuad;
+	Texture* renderTex;
 	void Start();
 	void Render();
 };
