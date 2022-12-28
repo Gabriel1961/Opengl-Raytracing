@@ -24,6 +24,9 @@ int main(void)
         return -1;
     }
 
+    // enable vsync
+    glfwSwapInterval(1);
+
     RayTracer rayTracer(window);
     rayTracer.Start();
 

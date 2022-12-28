@@ -16,7 +16,7 @@ public:
 
 	Texture(const std::string& _FilePath);
 	Texture() {}
-	Texture(uint heigth, uint witdth, GLenum antiAliasing = GL_NEAREST, GLenum format = GL_RGBA32F);
+	Texture(uint width, uint height, GLenum antiAliasing = GL_NEAREST, GLenum format = GL_RGBA32F);
 	Texture(ARGBColor* buffer,int _height,int _width, GLenum antiAliasing = GL_NEAREST);
 	~Texture();
 

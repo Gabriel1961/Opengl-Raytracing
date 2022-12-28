@@ -1,10 +1,123 @@
-#version 430
+#version 440
+#define T_MIN 0.01
+#define T_MAX 100
+#define SKY_BLUE vec3(.5,.7,1.)
+#define WHITE vec3(1.,1.,1.)
+#define MAGENTA vec3(1.,0.,1.)
+#define RED vec3(1.,0.,0.)
+#define GREEN vec3(0.,1.,0.)
+#define BLUE vec3(0.,0.,1.)
+const float INF = 1. / 0.;
+#define MSAA_SAMPLES 1
+vec2 RAND_STATE = vec2(gl_GlobalInvocationID.xy);
+float rand(){
+    float v = fract(sin(dot(RAND_STATE, vec2(12.9898, 78.233))) * 43758.5453);
+	RAND_STATE += vec2(378.263,24.133) * v;
+	return v;
+}
 
 layout(local_size_x = 1, local_size_y = 1,local_size_z = 1) in;
 
 layout(rgba32f,binding=0) uniform writeonly image2D imgOut;
 
+uniform mat4 camRot = mat4(1);
+uniform vec3 camPos = vec3(0,0,0);
+
+struct Ray{
+	vec3 o;
+	vec3 d;
+	vec3 at(float t){
+		return o + t*d;
+	}
+};
+struct Hit{
+	float t;
+	vec3 p;	 // hit point
+	vec3 n;  // normal
+};
+struct Sphere{
+	float r;
+	vec3 c;
+	vec3 col;
+};
+
+bool hitObj(Sphere s,Ray r,out Hit hit){
+	vec3 co = r.o - s.c;
+	float a = dot(r.d,r.d);
+	float b = dot(co,r.d);
+	float c = dot(co,co) - s.r*s.r;
+	float dis = b*b - a*c;
+	if(dis > 0){
+		float t = (-b-sqrt(dis))/a;
+		if(t<T_MAX && t>T_MIN)
+		{
+			hit.t = t;
+			hit.p = r.at(t);
+			hit.n = normalize(hit.p - s.c);
+			return true;
+		}
+		t = (-b+sqrt(dis))/a;	
+		if(t<T_MAX && t>T_MIN)
+		{
+			hit.t = t;
+			hit.p = r.at(t);
+			hit.n = normalize(hit.p - s.c);
+			return true;
+		}
+	}
+	return false;	
+}
+
+Sphere sphs[] = Sphere[2](
+	Sphere(1.,vec3(0.,1.,3.),RED),
+	Sphere(50.,vec3(0.,-50.,3.),GREEN)
+);
+
+
+vec3 color(Ray r){
+	float closest = INF;
+	int closestIdx = -1;
+	Hit rec;
+	for(int i=0;i<sphs.length();i++){
+		Hit hit;
+		if(hitObj(sphs[i],r,hit)){
+			if(hit.t<closest){
+				closest = hit.t;
+				closestIdx = i;
+				sphs[i].col;
+				rec = hit;
+			}
+		}
+	}
+	if(closestIdx != -1){
+		return sphs[closestIdx].col;
+	}
+	else{
+		float sky = (r.d.y + 1.)*.5;
+		return mix(WHITE,SKY_BLUE,sky);
+	}
+}
+
+
+const vec2 PIXEL_SIZE = 1./vec2(gl_NumWorkGroups.xy);
+vec3 colorMSAA(Ray r){
+	vec3 col = vec3(0,0,0);
+	for(int i=0;i<MSAA_SAMPLES;i++){
+		col += color(Ray(r.o,r.d + vec3(PIXEL_SIZE.x*rand(),PIXEL_SIZE.y*rand(),0)));
+	}
+	col /= float(MSAA_SAMPLES);
+	return col;
+}
+
 void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
-	imageStore(imgOut,coord,vec4(1,0,1,1));
+	vec2 uv = (coord - .5 * gl_NumWorkGroups.xy)/float(.5*gl_NumWorkGroups.xy);
+
+	Ray r = Ray(vec3(0.,0.,0.),vec3(uv,1));
+	r.o = camPos;
+	r.d = vec3(camRot*vec4(r.d,1));
+
+	vec4 value = vec4(colorMSAA(r),1.);
+
+	imageStore(imgOut,coord,value);
 }

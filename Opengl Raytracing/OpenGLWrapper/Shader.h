@@ -11,11 +11,9 @@ protected:
 	std::string m_FilePath;
 	std::unordered_map<std::string, int>m_UniformLocationCache;
 public:
-	static std::unordered_map<int, Shader*> shaderList;
-	int programID;
 	Shader(){}
 	Shader(const std::string& filepath);
-	bool Recompile();
+	virtual bool Recompile();
 	~Shader();
 	virtual void Bind();
 	void Unbind();
@@ -43,4 +41,5 @@ class ComputeShader : public Shader
 public:
 	ComputeShader(const std::string& str);
 	void Dispatch(uint groups_x, uint groups_y, uint groups_z);
+	bool Recompile() override;
 };

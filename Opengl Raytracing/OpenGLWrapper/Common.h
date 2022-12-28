@@ -7,11 +7,12 @@
 
 #include <memory>
 #define endl '\n'
-#define pi 3.14159265359f
+#define PI 3.14159265359f
 #define null 0
 typedef unsigned int uint;
 typedef unsigned short ushort;
 typedef unsigned char uchar;
+using namespace glm;
 using std::shared_ptr;
 using std::weak_ptr;
 using std::unique_ptr;

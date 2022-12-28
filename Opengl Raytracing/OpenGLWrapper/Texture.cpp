@@ -61,8 +61,8 @@ Texture::Texture(const std::string& _filePath)
 /// Generate arbitrary size buffer
 /// Format : GL_RGBA32F
 /// </summary>
-Texture::Texture(uint heigth, uint witdth, GLenum antiAliasing, GLenum format)
-	:height(heigth), width(witdth)
+Texture::Texture(uint width, uint height, GLenum antiAliasing, GLenum format)
+	:height(height), width(width)
 {
 	gc(glActiveTexture(GL_TEXTURE0));
 	gc(glGenTextures(1, &renderId));
@@ -73,7 +73,7 @@ Texture::Texture(uint heigth, uint witdth, GLenum antiAliasing, GLenum format)
 	gc(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 	gc(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
-	gc(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, witdth, heigth, 0, GL_RGBA, GL_FLOAT,
+	gc(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT,
 		NULL));
 	gc(glBindImageTexture(0, renderId, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F));
 }

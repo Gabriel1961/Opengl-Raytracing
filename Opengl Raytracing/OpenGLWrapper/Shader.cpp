@@ -4,7 +4,6 @@
 #include "sstream"
 #include "string"
 #include <filesystem>
-std::unordered_map<int, Shader*> Shader::shaderList;
 using namespace std;
 void ShaderCompilationErrorCheck(unsigned int shaderID, const std::string& name)
 {
@@ -32,7 +31,7 @@ void ShaderLinkErrorCheck(unsigned int program, const std::string& name)
 		std::cout << "Failed to link program: Name:" << name << "; " << Message << endl;
 	}
 }
-unsigned int CreateProgam(std::string filepath)
+unsigned int CreateProgram(std::string filepath)
 {
 	gce(unsigned int program = glCreateProgram());
 	gce(unsigned int vs = glCreateShader(GL_VERTEX_SHADER));
@@ -91,17 +90,15 @@ unsigned int CreateProgam(std::string filepath)
 
 Shader::Shader(const std::string& filepath) : m_RendererID(0), m_FilePath(filepath)
 {
-	m_RendererID = CreateProgam(filepath);
+	m_RendererID = CreateProgram(filepath);
 	gc(glUseProgram(m_RendererID));
-	programID = m_RendererID;
-	shaderList.insert({ m_RendererID,this });
 }
-/// returns if it succeded
+/// returns if it succeeded
 bool Shader::Recompile()
 {
 	uint newId=0;
 	try {
-		newId = CreateProgam(m_FilePath);
+		newId = CreateProgram(m_FilePath);
 		gce(glUseProgram(newId));
 	}
 	catch (const exception& ex) {
@@ -111,14 +108,12 @@ bool Shader::Recompile()
 		return 0;
 
 	gc(glDeleteProgram(m_RendererID));
-	programID = m_RendererID = newId;
+	m_RendererID = newId;
 	return 1;
 }
 
 Shader::~Shader()
 {
-
-	shaderList.erase(m_RendererID);
 	gc(glDeleteProgram(m_RendererID));
 }
 
@@ -187,7 +182,7 @@ int Shader::GetUniformLocation(const std::string& name)
 {
 	if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
 		return m_UniformLocationCache[name];
-	gc(int location = glGetUniformLocation(programID, name.c_str()));
+	gc(int location = glGetUniformLocation(m_RendererID, name.c_str()));
 	if (location == -1)
 		std::cout << "[Warning]: uniform " << name << " does not exist!\n";
 	m_UniformLocationCache[name] = location;

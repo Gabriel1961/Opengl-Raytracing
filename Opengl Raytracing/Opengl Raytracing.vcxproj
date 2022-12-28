@@ -131,6 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="RayTracer\Camera.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenGLWrapper\ComputeShader.cpp" />
     <ClCompile Include="OpenGLWrapper\DebugLine.cpp" />
@@ -145,6 +146,7 @@
     <ClCompile Include="RayTracer\RayTracer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="RayTracer\Camera.h" />
     <ClInclude Include="OpenGLWrapper\Common.h" />
     <ClInclude Include="OpenGLWrapper\DebugLine.h" />
     <ClInclude Include="OpenGLWrapper\FrameBuffer.h" />
