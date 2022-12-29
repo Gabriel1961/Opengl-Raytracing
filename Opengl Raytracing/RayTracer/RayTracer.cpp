@@ -54,7 +54,8 @@ RayTracer::RayTracer(GLFWwindow* window)
 
 void RayTracer::Start()
 {
-
+	cam.position = { 0,2,0 };
+	cam.angleXY.y += PI / 6;
 }
 
 void RayTracer::Render()

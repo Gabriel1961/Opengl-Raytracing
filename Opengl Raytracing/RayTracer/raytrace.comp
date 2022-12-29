@@ -8,13 +8,63 @@
 #define GREEN vec3(0.,1.,0.)
 #define BLUE vec3(0.,0.,1.)
 const float INF = 1. / 0.;
-#define MSAA_SAMPLES 1
-vec2 RAND_STATE = vec2(gl_GlobalInvocationID.xy);
-float rand(){
-    float v = fract(sin(dot(RAND_STATE, vec2(12.9898, 78.233))) * 43758.5453);
-	RAND_STATE += vec2(378.263,24.133) * v;
-	return v;
+#define MSAA_SAMPLES 8
+#define MAX_RSTEP 100
+
+
+uint hash( uint x ) {
+    x += ( x << 10u );
+    x ^= ( x >>  6u );
+    x += ( x <<  3u );
+    x ^= ( x >> 11u );
+    x += ( x << 15u );
+    return x;
 }
+
+
+
+// Compound versions of the hashing algorithm I whipped together.
+uint hash( uvec2 v ) { return hash( v.x ^ hash(v.y)                         ); }
+uint hash( uvec3 v ) { return hash( v.x ^ hash(v.y) ^ hash(v.z)             ); }
+uint hash( uvec4 v ) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w) ); }
+
+
+
+// Construct a float with half-open range [0:1] using low 23 bits.
+// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
+float floatConstruct( uint m ) {
+    const uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
+    const uint ieeeOne      = 0x3F800000u; // 1.0 in IEEE binary32
+
+    m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
+    m |= ieeeOne;                          // Add fractional part to 1.0
+
+    float  f = uintBitsToFloat( m );       // Range [1:2]
+    return f - 1.0;                        // Range [0:1]
+}
+
+
+
+// Pseudo-random value in half-open range [0:1].
+float random( float x ) { return floatConstruct(hash(floatBitsToUint(x))); }
+float random( vec2  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( vec3  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( vec4  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float rand(inout float state){ 
+	float val = floatConstruct(hash(floatBitsToUint(state)));
+	state = val;
+	return val;
+}
+
+
+//float rand(vec3 p){
+//    return fract(sin(dot(p, vec3(12.9898, 78.233,254.323))) * 43758.5453);
+//}
+
+vec3 randInUnitSph(vec3 p){
+	return vec3(random(p),random(p*43.23123),random(p*0.2323))*2 - 1;
+}
+
 
 layout(local_size_x = 1, local_size_y = 1,local_size_z = 1) in;
 
@@ -73,8 +123,8 @@ Sphere sphs[] = Sphere[2](
 	Sphere(50.,vec3(0.,-50.,3.),GREEN)
 );
 
-
-vec3 color(Ray r){
+// returns if it bounces
+bool colorRay(Ray r,out vec3 rcol,out Ray bounce){
 	float closest = INF;
 	int closestIdx = -1;
 	Hit rec;
@@ -90,24 +140,49 @@ vec3 color(Ray r){
 		}
 	}
 	if(closestIdx != -1){
-		return sphs[closestIdx].col;
+		rcol = sphs[closestIdx].col;
+		bounce = Ray(rec.p,randInUnitSph(rec.p)+rec.n);
+		return true;
 	}
 	else{
 		float sky = (r.d.y + 1.)*.5;
-		return mix(WHITE,SKY_BLUE,sky);
+		rcol = mix(WHITE,SKY_BLUE,sky);
+		return false;
 	}
 }
 
 
-const vec2 PIXEL_SIZE = 1./vec2(gl_NumWorkGroups.xy);
-vec3 colorMSAA(Ray r){
+vec3 colorScene(Ray r){
+	float at = 1.;
+	float weight = 0.5;
+	Ray cr = r;
+	for(int i=0;i<MAX_RSTEP;i++){
+		vec3 rcol;
+		Ray bounce;
+		bool res = colorRay(cr,rcol,bounce);
+		cr = bounce;
+		if(res == false){
+			return at * rcol;
+		}
+		at *= weight;
+	}
+	return vec3(0,0,0);
+}
+
+// something is wrong with this
+const vec2 PIXEL_SIZE = 2./vec2(gl_NumWorkGroups.xy);
+vec3 colorSceneMSAA(Ray r){
 	vec3 col = vec3(0,0,0);
+	float state = floatConstruct(hash(gl_GlobalInvocationID.xy));
 	for(int i=0;i<MSAA_SAMPLES;i++){
-		col += color(Ray(r.o,r.d + vec3(PIXEL_SIZE.x*rand(),PIXEL_SIZE.y*rand(),0)));
+		col += colorScene(Ray(r.o,r.d + vec3(PIXEL_SIZE.x*(2*rand(state)-1),
+											 PIXEL_SIZE.y*(2*rand(state)-1),
+											 0)));
 	}
 	col /= float(MSAA_SAMPLES);
 	return col;
 }
+
 
 void main() {
 	ivec2 coord = ivec2(gl_GlobalInvocationID.xy);
@@ -117,7 +192,7 @@ void main() {
 	r.o = camPos;
 	r.d = vec3(camRot*vec4(r.d,1));
 
-	vec4 value = vec4(colorMSAA(r),1.);
+	vec4 value = vec4(colorSceneMSAA(r),1.);
 
 	imageStore(imgOut,coord,value);
 }
