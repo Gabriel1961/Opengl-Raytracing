@@ -81,10 +81,21 @@ void Camera::UpdateInput()
 
 #pragma region CamSpeedChange
 	if (glfwGetKey(window, GLFW_KEY_UP))
-		camSpeed += 0.001;
+		focusDist += 0.01, printf("lensRadius: %f\n", focusDist);
 	else if (glfwGetKey(window, GLFW_KEY_DOWN))
-		camSpeed -= 0.001;
+		focusDist -= 0.01,printf("lensRadius: %f\n", focusDist);
 #pragma endregion
+
+}
+
+void Camera::SetUniforms(Shader* sh)
+{
+	sh->SetUniform1f("cam.fov", fov);
+	sh->SetUniform1f("cam.aperature", aperature);
+	sh->SetUniform1f("cam.focusDist", focusDist);
+	sh->SetUniform3f("cam.pos", position);
+	sh->SetUniform3f("cam.dir", direction);
+	sh->SetUniformMat3f("cam.rot", GetRotMat());
 
 }
 
@@ -93,4 +104,14 @@ void Camera::UpdateInput()
 glm::mat4 Camera::GetRotMat() const
 {
 	return rotate(rotate(mat4(1), angleXY.x, { 0,1,0 }), angleXY.y, { 1,0,0 });
+}
+
+vec3 Camera::Up()
+{
+	return mat3(GetRotMat())* vec3(0, 1, 0);
+}
+
+vec3 Camera::Right()
+{
+	return cross(direction, Up());
 }

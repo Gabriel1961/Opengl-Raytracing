@@ -56,16 +56,22 @@ void RayTracer::Start()
 {
 	cam.position = { 0,2,0 };
 	cam.angleXY.y += PI / 6;
+	cam.focusDist = 3;
+	cam.aperature = 0.1;
 }
 
 void RayTracer::Render()
 {
+	ImGui::Begin("Camera Settings");
+	ImGui::SliderFloat("Aperature",&cam.aperature,0,10);
+	ImGui::SliderFloat("Focal length",&cam.focusDist,0,10);
+	ImGui::End();
+
 	EnableShaderReload();
 	cam.UpdateInput();
 	GenerateRenderTexture();
 	renderTex->Bind(0);
-	rayTracingShader->SetUniform3f("camPos", cam.position);
-	rayTracingShader->SetUniformMat4f("camRot", cam.GetRotMat());
+	cam.SetUniforms(rayTracingShader);
 	rayTracingShader->Dispatch(renderTex->GetWidth(), renderTex->GetHeight(), 1);
 	renderQuad->Render();
 }
