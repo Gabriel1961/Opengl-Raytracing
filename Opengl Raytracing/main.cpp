@@ -1,5 +1,17 @@
 #include "OpenGLWrapper/Common.h"
 #include "RayTracer/RayTracer.h"
+#include <iomanip>
+#include <sstream>
+
+/// returns delta T
+float TimeFrame(GLFWwindow* window){
+    static float lastTime = glfwGetTime();
+    float t = glfwGetTime();
+    float d = t-lastTime;
+    glfwSetWindowTitle(window,std::to_string(int(1/d)).c_str());
+    lastTime = t;
+    return d;
+}
 
 int main(void)
 {
@@ -38,6 +50,7 @@ int main(void)
 
     while (!glfwWindowShouldClose(window))
     {
+        rayTracer.deltaTime = TimeFrame(window);
         glfwPollEvents();
         
         ImGui_ImplOpenGL3_NewFrame();

@@ -68,7 +68,7 @@ void RayTracer::Render()
 	ImGui::End();
 
 	EnableShaderReload();
-	cam.UpdateInput();
+	cam.UpdateInput(deltaTime);
 	GenerateRenderTexture();
 	renderTex->Bind(0);
 	cam.SetUniforms(rayTracingShader);

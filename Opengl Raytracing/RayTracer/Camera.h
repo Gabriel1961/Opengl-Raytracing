@@ -5,7 +5,7 @@ class Camera
 {
 public:
 	Camera(bool handleInput, GLFWwindow* window);
-	void UpdateInput();
+	void UpdateInput(float deltaT);
 	void SetUniforms(Shader* sh);
 	GLFWwindow* window;
 	float camSpeed = 0.1;

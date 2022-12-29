@@ -19,6 +19,11 @@ const float INF = 1. / 0.;
 #define MAX_RSTEP 20
 #define PI 3.14159
 
+#define RTY_SKY 0
+#define RTY_ABSORBED 1
+#define RTY_REFRACTION 2
+#define RTY_SCATTER 3
+
 uint hash( uint x ) {
     x += ( x << 10u );
     x ^= ( x >>  6u );
@@ -152,9 +157,10 @@ struct Sphere{
 vec3 debugColor = vec3(0,0,0);
 struct Material{
 	vec3 albedo;
-	float roughness; // [0,1]
+	float shininess; // [0,1]
 	float refIdx; // -1 for no refraction
-	bool scatter(Ray r,Hit h, out vec3 attenuation, out Ray scattered){
+	// returns the type of the scatter
+	int scatter(Ray r,Hit h, out vec3 attenuation, out Ray scattered){
 		float rstate = random(h.p);
 		attenuation = albedo;
 		// refraction
@@ -181,21 +187,25 @@ struct Material{
 				reflectProb = 1.0;
 			}
 			
-			if(rand(rstate)<reflectProb)
+			if(rand(rstate)<reflectProb){
 				scattered = Ray(h.p,reflect(r.d,h.n));
-			else
+				return RTY_SCATTER;
+			}
+			else{
 				scattered = Ray(h.p,refr);
+				return RTY_REFRACTION;
+			}
 			//debugColor = MAGENTA*reflectProb;
-			return true;
 		}
-		if(random(h.p) > roughness){ // scatter
-			scattered = Ray(h.p,h.n + randInUnitSph(h.p));
-			return true;
+		scattered = Ray(h.p,reflect(r.d,h.n) + randInUnitSph(h.p)*(1-shininess));
+		
+		if(dot(scattered.d, h.n)>0){
+			if(random(h.p) > (1-shininess)){ // scatter
+				return RTY_SCATTER;
+			}
 		}
-		else{ // reflect
-			scattered = Ray(h.p,reflect(r.d,h.n) + randInUnitSph(h.p)*(1-roughness));
-			return dot(scattered.d, h.n)>0;
-		}
+		return RTY_ABSORBED;
+		
 	}
 };
 
@@ -239,8 +249,8 @@ uniform Material mats[] = Material[](
 
 uniform Sphere sphs[] = Sphere[](
 	Sphere(1.,vec3(0.,1.,3.),0),
-	Sphere(1.,vec3(-2.,1.,3.),3),
-	Sphere(1.,vec3(2.,1.,3.),1),
+	Sphere(1.,vec3(-2.2,1.,3.),3),
+	Sphere(1.,vec3(2.2,1.,3.),1),
 	Sphere(100.,vec3(0.,-100.,3.),2)
 );
 
@@ -263,7 +273,7 @@ void closestObject(Ray r,out Hit rec,out int closestIdx){
 }
 
 // returns if it bounces
-bool colorRay(Ray r,out vec3 att,out Ray bounce){
+int colorRay(Ray r,out vec3 att,out Ray bounce){
 	int closestIdx = -1;
 	Hit rec;
 	closestObject(r,rec,closestIdx);
@@ -274,33 +284,31 @@ bool colorRay(Ray r,out vec3 att,out Ray bounce){
 	else{
 		float sky = (r.d.y + 1.)*.5;
 		att = mix(WHITE,SKY_BLUE,sky);
-		return false;
+		return RTY_SKY;
 	}
 }
 
-#define SHADOW_ITER 2
+#define SHADOW_ITER 3
 #define SHADOW_DEPTH 2 
-#define SHADOW_ATT .2
 
 vec3 getLight(vec3 p,int lightIdx){
 
-	vec3 col = WHITE;
-	Ray r = Ray(p,-lights[lightIdx].dir);
+	vec3 col = WHITE*.2;
+	Ray r = Ray(p,lights[lightIdx].dir);
 	for(int i=0;i<SHADOW_ITER;i++){
 		Ray bounce;
 		vec3 att;
-		if(colorRay(r,att,bounce)){
+		int rty = colorRay(r,att,bounce);
+		if(rty==RTY_SKY){
 			col *= att; // might need a weight 
-		}else{
+		}
+		else if(rty==RTY_SKY){
 			return lights[lightIdx].albedo*dot(-lights[lightIdx].dir,r.d);
 		}
+		else if(rty==RTY_SCATTER){
+		}
 		r = bounce;
-//		if(i==1){
-//			debugColor = MAGENTA;
-//		}
 	}
-	
-	return col * SHADOW_ATT;
 }
 
 vec3 colorScene(Ray r){
@@ -308,10 +316,10 @@ vec3 colorScene(Ray r){
 	for(int i=0;i<MAX_RSTEP;i++){
 		vec3 rcol;
 		Ray bounce;
-		bool res = colorRay(r,rcol,bounce);
+		int res = colorRay(r,rcol,bounce);
 		r = bounce;
 		col *= rcol;
-		if(res == false)
+		if(res == RTY_SKY)
 			return col;
 		if(i<SHADOW_DEPTH){
 			col *= getLight(r.o,0);

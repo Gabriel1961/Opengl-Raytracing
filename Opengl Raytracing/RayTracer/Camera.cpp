@@ -9,8 +9,10 @@ Camera::Camera(bool handleInput, GLFWwindow* window)
 	
 }
 
-void Camera::UpdateInput()
+void Camera::UpdateInput(float deltaT)
 {
+	const float ndeltaT = deltaT * 60;
+
 	if (handleInput == false)
 		return;
 #pragma region Cursor
@@ -56,35 +58,33 @@ void Camera::UpdateInput()
 	vec3 dirY = rotMat * vec4(0, 1, 0, 1);
 
 	if (glfwGetKey(window, GLFW_KEY_SPACE))
-		position.y += camSpeed;
+		position.y += camSpeed * ndeltaT;
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL))
-		position.y -= camSpeed;
+		position.y -= camSpeed * ndeltaT;
 
 	if (glfwGetKey(window, GLFW_KEY_A))
 	{
-		position -= cross(dirY,direction) * camSpeed;
+		position -= cross(dirY,direction) * camSpeed * ndeltaT;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D))
 	{
-		position += cross(dirY,direction) * camSpeed;
+		position += cross(dirY,direction) * camSpeed * ndeltaT;
 	}
 	if (glfwGetKey(window, GLFW_KEY_W))
 	{
-		position += direction * camSpeed;
+		position += direction * camSpeed * ndeltaT;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S))
 	{
-		position -= direction * camSpeed;
+		position -= direction * camSpeed * ndeltaT;
 	}
 
 #pragma endregion
 
-#pragma region CamSpeedChange
 	if (glfwGetKey(window, GLFW_KEY_UP))
 		focusDist += 0.01, printf("lensRadius: %f\n", focusDist);
 	else if (glfwGetKey(window, GLFW_KEY_DOWN))
 		focusDist -= 0.01,printf("lensRadius: %f\n", focusDist);
-#pragma endregion
 
 }
 

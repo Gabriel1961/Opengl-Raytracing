@@ -13,6 +13,7 @@ private:
 	int GetWindowHeight();
 	void EnableShaderReload();
 public:
+	float deltaTime;
 	Camera cam;
 	GLFWwindow* window;
 	RayTracer(GLFWwindow* window);
