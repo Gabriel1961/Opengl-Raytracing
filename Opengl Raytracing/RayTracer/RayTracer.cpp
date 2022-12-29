@@ -57,7 +57,7 @@ void RayTracer::Start()
 	cam.position = { 0,2,0 };
 	cam.angleXY.y += PI / 6;
 	cam.focusDist = 3;
-	cam.aperature = 0.1;
+	cam.aperature = 0;
 }
 
 void RayTracer::Render()
